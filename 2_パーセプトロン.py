@@ -40,3 +40,19 @@ print(OR_gate.fire(f_f)) # -> 0
 print(OR_gate.fire(f_t)) # -> 1
 print(OR_gate.fire(t_f)) # -> 1
 print(OR_gate.fire(t_t)) # -> 1
+
+print('-- XOR GATE --')
+def XOR_gate(x):
+    AND_gate = perceptron(np.array([0.5, 0.5]), -0.6)
+    NAND_gate = perceptron(np.array([-0.5, -0.5]), 0.6)
+    OR_gate = perceptron(np.array([0.5, 0.5]), -0.4)
+
+    s1 = NAND_gate.fire(x)
+    s2 = OR_gate.fire(x)
+    y = AND_gate.fire(np.array([s1, s2]))
+    return y
+
+print(XOR_gate(f_f)) # -> 0
+print(XOR_gate(f_t)) # -> 1
+print(XOR_gate(t_f)) # -> 1
+print(XOR_gate(t_t)) # -> 0
