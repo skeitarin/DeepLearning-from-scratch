@@ -133,3 +133,36 @@ def f3(x):
     return x[0]**2 + x[1]**2
 
 print(gradient_descent(f3, np.array([-3.0, 4.0]), lr=0.1, step_num=100))
+
+
+# ニューラルネットワークの学習
+# 2×3のネットワークを想定
+print("--- ニューラルネットワークの学習 ---")
+class simpleNN:
+    def __init__(self):
+        self.W = np.random.randn(2, 3) # ガウス分布で重みを初期化
+    
+    def predict(self, x):
+        return np.dot(x, self.W)
+
+    def softmax_function(self, a):
+        c = np.max(a)
+        e_a = np.exp(a - c) # オーバーフロー対策
+        sum_e_a = np.sum(e_a)
+        return e_a / sum_e_a
+
+    def loss(self, x, t):
+        z = self.predict(x)
+        y = self.softmax_function(z)
+        loss = cross_entropy_error2(y, t)
+        return loss
+
+NN = simpleNN()
+print("weight : " + str(NN.W))
+x = np.array([0.6, 0.9]) # 予測値
+print(x.shape)
+p = NN.predict(x)
+print("predict : " + str(p))
+print(np.argmax(p))
+t = np.array([0, 0, 1]) # 正解ラベル
+print("loss : " + str(NN.loss(x, t)))
