@@ -99,21 +99,41 @@ print(tmp1 + tmp2) # 偏微分＋偏微分＝全微分（接平面の傾き）
 # 勾配（Gradient）
 print("--- 勾配法（Gradient） ---")
 def numerical_gradient(f, x):
-    h = 1e-4 # 0.0001
-    grad = np.zeros_like(x) # xと同じ型の配列を生成
+    # h = 1e-4 # 0.0001
+    # grad = np.zeros_like(x) # xと同じ型の配列を生成
 
-    for i in range(x.size):
-        tmp = x[i]
-        # f(x+h)の計算
-        x[i] = tmp + h
-        f_1 = f(x)
+    # for i in range(x.size):
+    #     print("x:" + str(x) + ", i:" + str(i))
+    #     tmp = x[i]
+    #     # f(x+h)の計算
+    #     x[i] = tmp + h
+    #     f_1 = f(x)
         
-        # f(x-h)の計算
-        x[i] = tmp - h
-        f_2 = f(x)
+    #     # f(x-h)の計算
+    #     x[i] = tmp - h
+    #     f_2 = f(x)
 
-        grad[i] = (f_1 - f_2) / (2 * h) # 偏微分（x[i]に限りなく0に近い値を増減し傾きを計算。その他は定数化）
-        x[i] = tmp
+    #     grad[i] = (f_1 - f_2) / (2 * h) # 偏微分（x[i]に限りなく0に近い値を増減し傾きを計算。その他は定数化）
+    #     x[i] = tmp
+    # return grad
+    
+    h = 1e-4 # 0.0001
+    grad = np.zeros_like(x)
+    
+    it = np.nditer(x, flags=['multi_index'], op_flags=['readwrite'])
+    while not it.finished:
+        idx = it.multi_index
+        tmp_val = x[idx]
+        x[idx] = float(tmp_val) + h
+        fxh1 = f(x) # f(x+h)
+        
+        x[idx] = tmp_val - h 
+        fxh2 = f(x) # f(x-h)
+        grad[idx] = (fxh1 - fxh2) / (2*h)
+        
+        x[idx] = tmp_val # 値を元に戻す
+        it.iternext()   
+        
     return grad
 
 print(numerical_gradient(f2, np.array([3.0, 4.0]))) 
@@ -166,3 +186,11 @@ print("predict : " + str(p))
 print(np.argmax(p))
 t = np.array([0, 0, 1]) # 正解ラベル
 print("loss : " + str(NN.loss(x, t)))
+
+def f(W):
+    return NN.loss(x, t)
+
+dW = numerical_gradient(f, NN.W)
+print(" ------------ ")
+print(dW)
+# print("gradient : " + str(dW))
