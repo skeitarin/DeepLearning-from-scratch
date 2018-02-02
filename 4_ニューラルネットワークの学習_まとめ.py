@@ -1,4 +1,9 @@
+import sys, os
+sys.path.append("./deep-learning-from-scratch-master/")
 import numpy as np
+import pickle
+import matplotlib as plt
+from dataset.mnist import load_mnist
 
 class TwoLayerNN:
     def __init__(self, input_size, hidden_size, output_size, weight_init_std=0.01):
@@ -78,11 +83,52 @@ class TwoLayerNN:
         grads["b2"] = self.numerical_gradient(loss_W, self.params["b2"])
         return grads
 
-NN = TwoLayerNN(input_size=784, hidden_size=100, output_size=10)
-x = np.random.rand(100, 784)
-t = np.random.rand(100, 10)
-y = NN.predict(x)
-# print(y)
-grads = NN.gradient(x, t)
-print(grads["W1"].shape)
+# NN = TwoLayerNN(input_size=784, hidden_size=100, output_size=10)
+# x = np.random.rand(100, 784)
+# t = np.random.rand(100, 10)
+# y = NN.predict(x)
+# grads = NN.gradient(x, t)
+# print(grads["W1"].shape)
 
+# --- ミニバッチ学習 ---
+print("--- mini batch learning ---")
+(x_train, t_train), (x_test, t_test) = load_mnist(flatten=True, one_hot_label=True)
+
+train_loss_list = []
+# ハイパーパラメータ
+iters_num = 1000
+train_size = x_train.shape[0]
+batch_size = 100
+learning_rate = 0.1
+
+NN = TwoLayerNN(input_size=784, hidden_size=50, output_size=10)
+
+for i in range(iters_num):
+    # ミニバッチの取得
+    batch_mask = np.random.choice(train_size, batch_size)
+    print("batch_mask : " + str(batch_mask))
+    x_batch = x_train[batch_mask]
+    t_batch = t_train[batch_mask]
+
+    # 勾配の計算
+    grads = NN.gradient(x_batch, t_batch)
+
+    # パラメータの更新
+    for key in ("W1", "W2", "b1", "b2"):
+        print("--------- prams update start ----------")
+        print("--- " + key + "---")
+        print(grads[key])
+        print("------")
+        print(NN.params[key])
+        print("--------- prams update end ----------")
+        # NN.params[key] = float(NN.params[key]) - (learning_rate * grads[key])
+    
+    # 学習経過の記録
+    loss = NN.loss(x_batch, t_batch)
+    train_loss_list.append(loss)
+
+x = np.arange(0.0, iters_num, 1)
+y = train_loss_list.tolist()
+plt.xlabel("x")
+plt.ylabel("f(x)")
+plt.plot(x, y)
