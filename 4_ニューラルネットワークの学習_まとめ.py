@@ -2,7 +2,7 @@ import sys, os
 sys.path.append("./deep-learning-from-scratch-master/")
 import numpy as np
 import pickle
-import matplotlib as plt
+import matplotlib.pyplot as plt
 from dataset.mnist import load_mnist
 
 class TwoLayerNN:
@@ -10,9 +10,9 @@ class TwoLayerNN:
         # 重みの初期化
         self.params = {}
         self.params["W1"] = weight_init_std * np.random.randn(input_size, hidden_size)
-        self.params["b1"] = np.zeros_like(hidden_size)
+        self.params["b1"] = np.zeros(hidden_size)
         self.params["W2"] = weight_init_std * np.random.randn(hidden_size, output_size)
-        self.params["b2"] = np.zeros_like(output_size)
+        self.params["b2"] = np.zeros(output_size)
     
     def sigmoid_function(self, x):
         return 1 / (1 + np.exp(-x)) # exp(x)はネイピア数（e）のx乗
@@ -59,12 +59,11 @@ class TwoLayerNN:
         h = 1e-4 # 0.0001
         grad = np.zeros_like(x)
         it = np.nditer(x, flags=['multi_index'], op_flags=['readwrite'])
-        print("------- start grad ------" + str(x.shape))
         while not it.finished:
             idx = it.multi_index
             tmp_val = x[idx]
-            x[idx] = float(tmp_val) + h
-            fxh1 = f(x) # f(x+h)
+            x[idx] = float(tmp_val) + h # self.params["x"]の更新（numpyのため参照渡しになる）
+            fxh1 = f(x) # f(x+h) -> xはダミーの引数。loss引数xには、gradient引数xが渡される
         
             x[idx] = tmp_val - h 
             fxh2 = f(x) # f(x-h)
@@ -95,18 +94,24 @@ print("--- mini batch learning ---")
 (x_train, t_train), (x_test, t_test) = load_mnist(flatten=True, one_hot_label=True)
 
 train_loss_list = []
+train_acc_list = []
+test_acc_list = []
+
 # ハイパーパラメータ
-iters_num = 1000
+iters_num = 10
 train_size = x_train.shape[0]
-batch_size = 100
+batch_size = 10
 learning_rate = 0.1
+
+# 1エポックあたりの繰り返し数
+iter_per_epoch = max(train_size / batch_size, 1)
 
 NN = TwoLayerNN(input_size=784, hidden_size=50, output_size=10)
 
 for i in range(iters_num):
     # ミニバッチの取得
     batch_mask = np.random.choice(train_size, batch_size)
-    print("batch_mask : " + str(batch_mask))
+    # print("batch_mask : " + str(batch_mask))
     x_batch = x_train[batch_mask]
     t_batch = t_train[batch_mask]
 
@@ -115,20 +120,27 @@ for i in range(iters_num):
 
     # パラメータの更新
     for key in ("W1", "W2", "b1", "b2"):
-        print("--------- prams update start ----------")
-        print("--- " + key + "---")
-        print(grads[key])
-        print("------")
-        print(NN.params[key])
-        print("--------- prams update end ----------")
-        # NN.params[key] = float(NN.params[key]) - (learning_rate * grads[key])
+        NN.params[key] -= learning_rate * grads[key]
     
     # 学習経過の記録
     loss = NN.loss(x_batch, t_batch)
+    print("- learning... " + str(i) + "/" + str(iters_num) + " - loss:" + str(loss))
     train_loss_list.append(loss)
 
-x = np.arange(0.0, iters_num, 1)
-y = train_loss_list.tolist()
-plt.xlabel("x")
-plt.ylabel("f(x)")
-plt.plot(x, y)
+    # 1エポックごとに認識精度を計算
+    if 1 % iter_per_epoch == 0:
+        train_acc_list.append(NN.accuracy(x_train, t_train))
+        test_acc_list.append(NN.accuracy(x_train, t_train))
+        print("train acc, test acc | " + str(train_acc) + ", " + str(test_acc))
+
+
+# グラフの描画
+markers = {'train': 'o', 'test': 's'}
+x = np.arange(len(train_acc_list))
+plt.plot(x, train_acc_list, label='train acc')
+plt.plot(x, test_acc_list, label='test acc', linestyle='--')
+plt.xlabel("epochs")
+plt.ylabel("accuracy")
+plt.ylim(0, 1.0)
+plt.legend(loc='lower right')
+plt.show()
