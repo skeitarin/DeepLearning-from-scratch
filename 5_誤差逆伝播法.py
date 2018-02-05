@@ -11,6 +11,15 @@ class MulLayer:
         dx = dout * self.y
         dy = dout * self.x
         return dx, dy
+# 加算レイヤー
+class MulLayer:
+    def __init__(self):
+    def forward(self, x, y):
+        return x + y
+    def backward(self, dout):
+        dx = dout * 1
+        dy = dout * 1
+        return dx, dy
 
 apple = 100
 apple_num = 2
