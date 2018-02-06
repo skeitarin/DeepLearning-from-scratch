@@ -4,6 +4,7 @@ import numpy as np
 import pickle
 import matplotlib.pyplot as plt
 from dataset.mnist import load_mnist
+from datetime import datetime
 
 class TwoLayerNN:
     def __init__(self, input_size, hidden_size, output_size, weight_init_std=0.01):
@@ -91,6 +92,7 @@ class TwoLayerNN:
 
 # --- ミニバッチ学習 ---
 print("--- mini batch learning ---")
+print(" proc start : " + str(datetime.now().strftime("%Y/%m/%d %H:%M:%S")))
 (x_train, t_train), (x_test, t_test) = load_mnist(flatten=True, one_hot_label=True)
 
 train_loss_list = []
@@ -133,6 +135,8 @@ for i in range(iters_num):
         test_acc_list.append(NN.accuracy(x_train, t_train))
         print("train acc, test acc | " + str(train_acc) + ", " + str(test_acc))
 
+
+print(" proc end : " + str(datetime.now().strftime("%Y/%m/%d %H:%M:%S")))
 
 # グラフの描画
 markers = {'train': 'o', 'test': 's'}
