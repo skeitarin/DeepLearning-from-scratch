@@ -1,3 +1,5 @@
+import numpy as np
+
 # 乗算レイヤー
 class MulLayer:
     def __init__(self):
@@ -22,6 +24,32 @@ class AddLayer:
         dx = dout * 1
         dy = dout * 1
         return dx, dy
+
+# ReLUレイヤー
+class ReluLayer:
+    def __init__(self):
+        self.mask = None # numpyのBoolean
+    def forward(self, x):
+        self.mask = (x <= 0) # x<=0の箇所をTrue、それ以外をFalseのnumpy配列（次元は引数xと同じ）
+        out = x.copy()
+        out[self.mask] = 0 # Trueの箇所（0以下）を0に変更する、その他はそのまま（ReLu関数）
+        return out
+    def backward(self, dout):
+        dout[self.mask] = 0
+        dx = dout
+        return dx
+
+# Sigmoidレイヤー
+class SigmoidLayer():
+    def __init__(self):
+        self.out = None
+    def forward(self, x):
+        out = 1 / (1 + np.exp(-x))
+        self.out = out
+        return out
+    def backward(self, dout):
+        dx = dout * self.out * (1.0 - self.out) # p.143 ~ 146
+        return dx
 
 apple = 100
 apple_num = 2
