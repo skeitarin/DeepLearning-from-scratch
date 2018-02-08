@@ -51,6 +51,55 @@ class SigmoidLayer():
         dx = dout * self.out * (1.0 - self.out) # p.143 ~ 146
         return dx
 
+# Affineレイヤー
+class AffineLayer():
+    def __init__(self, W, b):
+        self.W = W
+        self.b = b
+        self.x = None
+        self.dW = None
+        self.db = None
+    def forward(self, x):
+        self.x = x
+        out = np.dot(x, self.W) + self.b
+        return out
+    def backward(self, dout):
+        dx = np.dot(dout, self.W.T)
+        self.dW = np.dot(self.x.T, dout)
+        self.db = np.sum(dout, axis=0)
+        return dx
+
+# Softmax-with-Lossレイヤー（Lossは交差エントロピー誤差）
+class SoftmaxWithLossLayer():
+    def __init__(self):
+        self.loss = None # 損失
+        self.y = None # Softmax関数の出力
+        self.t = None # 教師データ、正解ラベル（one-hot vector）
+    def softmax_function(self, a):
+        c = np.max(a)
+        e_a = np.exp(a - c) # オーバーフロー対策
+        sum_e_a = np.sum(e_a)
+        return e_a / sum_e_a
+    def cross_entropy_error(self, y, t):
+        if y.ndim == 1:
+            t = t.reshape(1, t.size)
+            y = y.reshape(1, y.size)
+        # 教師データがone-hot-vectorの場合、正解ラベルのインデックスに変換
+        if t.size == y.size:
+            t = t.argmax(axis=1) 
+        batch_size = y.shape[0]
+        return -np.sum(np.log(y[np.arange(batch_size), t] + 1e-7)) / batch_size
+    def forward(self, x, t):
+        self.t = t
+        self.y = self.softmax_function(x)
+        self.loss = self.cross_entropy_error(self.y, self.t)
+        return self.loss
+    def backward(self, dout=1):
+        batch_size = self.t.shape[0]
+        dx = (self.y - self.t) / batch_size
+        return dx
+
+
 apple = 100
 apple_num = 2
 tax = 1.1
