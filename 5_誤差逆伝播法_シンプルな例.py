@@ -6,6 +6,7 @@ import matplotlib.pyplot as plt
 from dataset.mnist import load_mnist
 from datetime import datetime
 
+
 # ReLUレイヤー
 class ReluLayer:
     def __init__(self):
@@ -37,8 +38,6 @@ class AffineLayer():
         self.dW = np.dot(self.x.T, dout)
         self.db = np.sum(dout, axis=0)
         return dx
-
-# Softmax-with-Lossレイヤー（Lossは交差エントロピー誤差）
 class SoftmaxWithLossLayer():
     def __init__(self):
         self.loss = None # 損失
@@ -68,7 +67,7 @@ class SoftmaxWithLossLayer():
         dx = (self.y - self.t) / batch_size
         return dx
 
-class TwoLayerNN():
+class SimpleNN():
     def __init__(self, input_size, hidden_size, output_size, weight_init_std=0.01):
         self.params = {}
         self.layers = OrderedDict()
@@ -118,56 +117,18 @@ class TwoLayerNN():
         grads["b2"] = self.layers["Affine2"].db
         return grads
 
-print("--- mini batch learning ---")
-print(" proc start : " + str(datetime.now().strftime("%Y/%m/%d %H:%M:%S")))
-# データの読み込み
-(x_train, t_train), (x_test, t_test) = load_mnist(normalize=True, one_hot_label=True)
+# x（入力層）は2つ
+# h（隠し層）は3つ
+# y（出力層）は1つ
+# のニューラルネットワークを想定
+# x_test = np.array([[1, 2],[3, 4],[5, 6],[7, 8],[9, 0]],dtype=float)
+# y_test = np.array([[1], [0], [1], [0], [1]],dtype=float)
+x_test = np.array([[1, 2]],dtype=float)
+y_test = np.array([[1, 0]],dtype=float)
 
-NN = TwoLayerNN(input_size=784, hidden_size=50, output_size=10)
-
-iters_num = 10000  # 繰り返しの回数を適宜設定する
-train_size = x_train.shape[0]
-batch_size = 100
+NN = SimpleNN(input_size=2, hidden_size=3, output_size=2)
 learning_rate = 0.1
-
-train_loss_list = []
-train_acc_list = []
-test_acc_list = []
-
-iter_per_epoch = max(train_size / batch_size, 1)
-
-for i in range(iters_num):
-    batch_mask = np.random.choice(train_size, batch_size)
-    x_batch = x_train[batch_mask]
-    t_batch = t_train[batch_mask]
-    
-    # 勾配の計算
-    grad = NN.gradient(x_batch, t_batch)
-    
-    # パラメータの更新
+for i in range(10):
+    grad = NN.gradient(x_test, y_test)
     for key in ('W1', 'b1', 'W2', 'b2'):
         NN.params[key] -= learning_rate * grad[key]
-    
-    loss = NN.loss(x_batch, t_batch)
-    print("- learning... " + str(i) + "/" + str(iters_num) + " - loss:" + str(loss))
-    train_loss_list.append(loss)
-    
-    if i % iter_per_epoch == 0:
-        train_acc = NN.accuracy(x_train, t_train)
-        test_acc = NN.accuracy(x_test, t_test)
-        train_acc_list.append(train_acc)
-        test_acc_list.append(test_acc)
-        print("train acc, test acc | " + str(train_acc) + ", " + str(test_acc))
-
-print(" proc end : " + str(datetime.now().strftime("%Y/%m/%d %H:%M:%S")))
-
-# グラフの描画
-markers = {'train': 'o', 'test': 's'}
-x = np.arange(len(train_acc_list))
-plt.plot(x, train_acc_list, label='train acc')
-plt.plot(x, test_acc_list, label='test acc', linestyle='--')
-plt.xlabel("epochs")
-plt.ylabel("accuracy")
-plt.ylim(0, 1.0)
-plt.legend(loc='lower right')
-plt.show()
