@@ -10,11 +10,12 @@ from util_loadcsv import load_as_numpy
 from util_multi_neural_network import neural_network
 from util_optimizer import *
 from util_model_manager import model_manager
+from util_trainer import trainer
 from sklearn.cross_validation import train_test_split
 from common.multi_layer_net_extend import MultiLayerNetExtend
 
 loader = load_as_numpy()
-data = loader.load("/data/train.csv")
+data = loader.load("/data/test.csv")
 
 # 入力値 データレイアウト
 # [1枚目の柄, 1枚目の数　・・・　5枚目の柄, 5枚目の数]
@@ -35,44 +36,24 @@ NN = neural_network(input_size=10, hidden_size_list=hidden_size_list, output_siz
                     weight_init_std=0.01, use_batchnorm=True, use_dropout=False, dropout_ration=0.5)
 
 
-epoch_cnt = 1
-max_epochs = 21
-batch_size = 100
-train_size = x_train.shape[0]
-lr = 0.01
-iter_per_epoch = max(batch_size*100 / batch_size, 1)
-acc_list = []
+better_acc = 0
+for i in range(50):
+    hidden_layer_num = np.random.randint(low=1, high=10, size=1)
+    hidden_neuron_num =  np.random.randint(low=1, high=100, size=1)
+    hidden_size_list = []
+    for k in range(hidden_layer_num[0]):
+        hidden_size_list.append(hidden_neuron_num[0])
+    #optimizer = SGD(lr=lr)
+    # optimizer = Momentum()
+    optimizer = Adam()
+    T = trainer(training_data=x_train, teacher_data=t_train, max_epochs=50, batch_size=100)
+    NN = neural_network(input_size=10, hidden_size_list=hidden_size_list, output_size=10,
+                    weight_init_std=0.01, use_batchnorm=True, use_dropout=False, dropout_ration=0.5)
+    acc = T.training(neural_network=NN, optimizer=optimizer)
+    print("accuracy : " + str(acc) + " | layer : " + str(hidden_layer_num[0]) + ", neuron : " + str(hidden_neuron_num[0]))
+    if(better_acc < acc):
+        better_acc = acc
+        T.store_model("/model/porker")
 
-#optimizer = SGD(lr=lr)
-# optimizer = Momentum()
-optimizer = Adam()
 
-for i in range(1000000):
-    batch_mask = np.random.choice(train_size, batch_size)
-    x_batch = x_train[batch_mask]
-    t_batch = t_train[batch_mask]
 
-    # 誤差逆伝播法による勾配の計算
-    grads = NN.gradient(x_batch, t_batch)
-    # 重みの調整
-    optimizer.update(NN.params, grads)
-    if i % iter_per_epoch == 0:
-        acc = NN.accuracy(x_train, t_train)
-        acc_list.append(acc)
-        print("epoch : " + str(epoch_cnt) + " accuracy : " + str(acc))
-        
-        epoch_cnt += 1
-        if epoch_cnt >= max_epochs:
-            break
-
-# 学習したニューラルネットワークを保存
-manager = model_manager("/model/porker")
-manager.store(NN, overwrite=True)
-
-x = np.arange(len(acc_list))
-plt.plot(x, acc_list, label='train acc')
-plt.xlabel("epochs")
-plt.ylabel("accuracy")
-plt.ylim(0, 1.0)
-plt.legend(loc='lower right')
-plt.show()
